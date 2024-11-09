@@ -3,6 +3,9 @@ import openai
 import chainlit as cl
 from json import load
 from datetime import datetime
+from datetime import datetime
+
+import requests
 
 from llama_index.core import (
     Settings,
@@ -20,6 +23,8 @@ from llama_index.llms.openai import OpenAI
 from llama_index.core.base.llms.types import ChatMessage
 from llama_index.core.tools import QueryEngineTool, ToolMetadata, FunctionTool
 from dotenv import load_dotenv
+
+hotel_server_url = 'http://localhost:8081'
 
 def load_or_build_index(data_path: str, index_name: str):
     with open(data_path, 'r') as json_file:
@@ -41,10 +46,17 @@ def read_prompt(path):
     with open(path) as prompt:
         return prompt.read()
 
+
 def call_taxi(full_name: str, destination: str, time: datetime):
     """Tool to call the taxi service with the provided client's data."""
-     # call some localhost API endpoint
-    print(f"Called taxi API with parameters:\nFull Name:{full_name}\nDestination:{destination}\nTime:{time}")
+    # call some localhost API endpoint
+    headers = {
+        "full_name": full_name,
+        "departure_place": "Salzburg",
+        "departure_date": str(time),
+        "destination_place": destination,
+    }
+    requests.post(hotel_server_url + '/callTaxi', headers=headers)
 
 
 set_global_handler("simple")
@@ -105,6 +117,14 @@ city_tool = QueryEngineTool(
 taxi_tool = FunctionTool.from_defaults(fn=call_taxi)
 
 
+def callCheckIn():
+    headers = {
+        "first_name": "Wolfgang",
+        "last_name": "Schmitt",
+        "checkin_date": str(datetime.now()),
+    }
+    requests.post(hotel_server_url + '/checkIn', headers=headers)
+
 @cl.on_chat_start
 async def start():
     check_in_msg = read_prompt('prompts/check_in_confirm.md')
@@ -131,6 +151,8 @@ async def start():
         verbose=VERBOSE_MODE,
         system_prompt=agent_prompt,
     )
+
+    callCheckIn()
 
     cl.user_session.set("agent", agent)
 
