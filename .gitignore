@@ -1,0 +1,5 @@
+.env
+.devcontainer
+.chainlit
+__pycache__
+.github

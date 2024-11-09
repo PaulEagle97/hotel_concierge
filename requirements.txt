@@ -1,0 +1,5 @@
+chainlit
+pydantic
+llama-index
+llama-index-llms-openai
+llama-index-agent-openai
