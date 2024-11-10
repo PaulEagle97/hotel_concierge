@@ -12,8 +12,10 @@ from llama_index.core import (
     StorageContext,
     VectorStoreIndex,
     load_index_from_storage,
+    Document,
+    set_global_handler,
+    PromptTemplate
 )
-from llama_index.core import Document, set_global_handler, PromptTemplate
 from llama_index.embeddings.openai import OpenAIEmbedding
 from llama_index.core.callbacks import CallbackManager
 from llama_index.core.storage.chat_store import SimpleChatStore
@@ -25,6 +27,14 @@ from llama_index.core.tools import QueryEngineTool, ToolMetadata, FunctionTool
 from dotenv import load_dotenv
 
 hotel_server_url = 'http://localhost:8081'
+
+def call_check_in():
+    headers = {
+        "first_name": "Wolfgang",
+        "last_name": "Schmitt",
+        "checkin_date": str(datetime.now()),
+    }
+    requests.post(hotel_server_url + '/checkIn', headers=headers)
 
 def load_or_build_index(data_path: str, index_name: str):
     with open(data_path, 'r') as json_file:
@@ -46,7 +56,6 @@ def read_prompt(path):
     with open(path) as prompt:
         return prompt.read()
 
-
 def call_taxi(full_name: str, destination: str, time: datetime):
     """Tool to call the taxi service with the provided client's data."""
     # call some localhost API endpoint
@@ -59,14 +68,15 @@ def call_taxi(full_name: str, destination: str, time: datetime):
     requests.post(hotel_server_url + '/callTaxi', headers=headers)
 
 
-set_global_handler("simple")
+VERBOSE_MODE = False
+# set_global_handler("simple")
+# Settings.callback_manager = CallbackManager([cl.LlamaIndexCallbackHandler()])
+
 load_dotenv()
 openai.api_key = os.environ.get("OPENAI_API_KEY")
 
-Settings.callback_manager = CallbackManager([cl.LlamaIndexCallbackHandler()])
 Settings.embed_model = OpenAIEmbedding(model="text-embedding-3-large")
 Settings.context_window = 4096
-VERBOSE_MODE = True
 TOP_K = 5
 
 LLM = OpenAI(
@@ -76,22 +86,13 @@ LLM = OpenAI(
     # streaming=True
 )
 
-hotel_index = load_or_build_index('./datasets/salzburg_hotel.json', 'hotel')
-city_index = load_or_build_index('./datasets/salzburg_city.json', 'city')
 
+hotel_index = load_or_build_index('./datasets/salzburg_hotel.json', 'hotel')
 hotel_query_engine = hotel_index.as_query_engine(
                                                  llm=LLM,
                                                  text_qa_template=PromptTemplate(read_prompt('prompts/hotel_search_prompt.md')),
                                                  similarity_top_k=TOP_K,
                                                  verbose=VERBOSE_MODE)
-
-city_query_engine = city_index.as_query_engine(
-                                               llm=LLM,
-                                               text_qa_template=PromptTemplate(read_prompt('prompts/city_search_prompt.md')),
-                                               similarity_top_k=TOP_K,
-                                               verbose=VERBOSE_MODE)
-
-
 hotel_tool = QueryEngineTool(
     hotel_query_engine,
     ToolMetadata(
@@ -103,6 +104,12 @@ hotel_tool = QueryEngineTool(
     )
 )
 
+city_index = load_or_build_index('./datasets/salzburg_city.json', 'city')
+city_query_engine = city_index.as_query_engine(
+                                               llm=LLM,
+                                               text_qa_template=PromptTemplate(read_prompt('prompts/city_search_prompt.md')),
+                                               similarity_top_k=TOP_K,
+                                               verbose=VERBOSE_MODE)
 city_tool = QueryEngineTool(
     city_query_engine,
     ToolMetadata(
@@ -117,16 +124,9 @@ city_tool = QueryEngineTool(
 taxi_tool = FunctionTool.from_defaults(fn=call_taxi)
 
 
-def callCheckIn():
-    headers = {
-        "first_name": "Wolfgang",
-        "last_name": "Schmitt",
-        "checkin_date": str(datetime.now()),
-    }
-    requests.post(hotel_server_url + '/checkIn', headers=headers)
-
 @cl.on_chat_start
 async def start():
+    call_check_in()
     check_in_msg = read_prompt('prompts/check_in_confirm.md')
 
     await cl.Message(
@@ -152,10 +152,7 @@ async def start():
         system_prompt=agent_prompt,
     )
 
-    callCheckIn()
-
     cl.user_session.set("agent", agent)
-
 
 
 @cl.on_message
@@ -169,4 +166,3 @@ async def main(message: cl.Message):
     for token in res.response_gen:
         await msg.stream_token(token)
     await msg.send()
-

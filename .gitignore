@@ -3,3 +3,4 @@
 .chainlit
 __pycache__
 .github
+.files
