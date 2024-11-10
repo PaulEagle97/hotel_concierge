@@ -5,7 +5,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
     def do_POST(self):
         if self.path == "/callTaxi":
             print("-------------------------------------------")
-            print("### CALL TAXI")
+            print("\t\t### CALL TAXI")
             full_name = self.headers.get("full_name")
             departure_place = self.headers.get("departure_place")
             departure_date = self.headers.get("departure_date")
@@ -15,7 +15,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             print(f"Departure place: \t\t {departure_place}")
             print(f"Departure date: \t\t {departure_date}")
             print(f"Destination place: \t\t {destination_place}")
-            print("-------------------------------------------")
+            print("-------------------------------------------\t\t")
 
             self.send_response(200)
             self.send_header("Content-type", "application/json")
@@ -23,7 +23,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             response_content = b'{"message": "Taxi is on its way!"}'
             self.wfile.write(response_content)
         elif self.path == "/checkIn":
-            print("-------------------------------------------")
+            print("\t\t-------------------------------------------")
             print("### CHECK IN")
             first_name = self.headers.get("first_name")
             last_name = self.headers.get("last_name")
@@ -32,7 +32,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
             print(f"First name: \t\t {first_name}")
             print(f"Last name: \t\t {last_name}")
             print(f"Checkin date: \t\t {checkin_date}")
-            print("-------------------------------------------")
+            print("-------------------------------------------\t\t")
 
             self.send_response(200)
             self.send_header("Content-type", "application/json")
