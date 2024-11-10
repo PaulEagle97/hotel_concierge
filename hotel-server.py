@@ -64,7 +64,7 @@ class SimpleHTTPRequestHandler(BaseHTTPRequestHandler):
 def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler):
     server_address = ('', 8081)  # Listen on port 8081
     httpd = server_class(server_address, handler_class)
-    print("Start hotel server...")
+    print("######### \t START HOTEL SERVER \n\n")
     httpd.serve_forever()
 
 
