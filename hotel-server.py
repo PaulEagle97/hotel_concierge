@@ -71,25 +71,3 @@ def run(server_class=HTTPServer, handler_class=SimpleHTTPRequestHandler):
 # Run the server
 if __name__ == "__main__":
     run()
-
-
-'''
-    first_name = self.headers.get("first_name")
-    last_name = self.headers.get("last_name")
-    departure_place = self.headers.get("departure_place")
-    departure_date = self.headers.get("departure_date")
-    destination_place = self.headers.get("destination_place")
-
-import requests
-
-url = "http://localhost:8081/callTaxi"  # Replace with your endpoint
-headers = {
-    "Authorization": "Bearer your_token",
-    "Content-Type": "application/json",
-    "Custom-Header": "CustomValue"
-}
-data = {}
-
-response = requests.post(url, headers=headers, json=data)
-
-'''
